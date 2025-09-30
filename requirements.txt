@@ -12,7 +12,7 @@ sktime
 scipy
 #--no-binary scipy
 seaborn
-statsmodels==0.13.5
+#statsmodels==0.13.5
 tslearn==0.6.1
 vmdpy==0.2
 tftb
@@ -23,3 +23,9 @@ jupyter
 h5py
 chart_studio
 plotly
+influxdb-client
+paho-mqtt
+#customtkinter
+streamlit
+streamlit-option_menu
+streamlit-pdf-viewer

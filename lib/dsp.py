@@ -18,7 +18,8 @@ import padasip as pa
 import pandas as pd
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import tftb
+import streamlit as st
+#import tftb
 from tqdm import tqdm
 # from dsp_utils import plot_sim_waves, plot_noise_signal, plot_decomposed_components, plot_filtered_signal
 import pywt
@@ -26,7 +27,10 @@ import ssqueezepy as sq
 ###from pyemd import eemd, emd, ceemdan
 ###from py_emd import EEMD, EMD, CEEMDAN
 from PyEMD import EEMD, EMD, CEEMDAN
+#from pyemd import EEMD, EMD, CEEMDAN
 from vmdpy import VMD
+from utils import save_numpy_array
+import pandas as pd
 from pylab import (arange, flipud, linspace, cos, pi, log, hanning,
                    ceil, log2, floor, empty_like, fft, ifft, fabs, exp, roll, convolve)
 warnings.filterwarnings('ignore')
@@ -36,11 +40,12 @@ with warnings.catch_warnings():
 plt.rcParams['figure.figsize'] = [8, 3] # figsize for signal
 
 
+
 # ==============================================================================
 # ------------------------------------Waves-------------------------------------
 # ==============================================================================
 
-def sine_wave(duration=10, sampling_rate=100, amplitude=1, frequency=1, phase=0, show=False):
+def sine_wave(duration=10, sampling_rate=100, amplitude=1, frequency=1, phase=0, show=False, stream=False):
     """
     Generate a sine wave signal.
 
@@ -65,12 +70,15 @@ def sine_wave(duration=10, sampling_rate=100, amplitude=1, frequency=1, phase=0,
     sine_wave = amplitude * np.sin(2 * np.pi * frequency * time + phase)
 
     if show:
-        plot_sim_waves(sine_wave, 'Sine Wave')
+        if stream == True:
+            plot_sim_waves(sine_wave, 'Sine Wave', stream=True)
+        else:
+            plot_sim_waves(sine_wave, 'Sine Wave')
 
     return sine_wave
 
 
-def triangle_wave(duration=10, sampling_rate=100, amplitude=1, frequency=1, show=False):
+def triangle_wave(duration=10, sampling_rate=100, amplitude=1, frequency=1, show=False, stream=False):
     """
     Generate a triangle wave signal.
 
@@ -94,12 +102,15 @@ def triangle_wave(duration=10, sampling_rate=100, amplitude=1, frequency=1, show
     triangle_wave = (4 * amplitude / period) * np.abs((time - period / 4) % period - period / 2) - amplitude
 
     if show:
-        plot_sim_waves(triangle_wave, 'Triangle Wave')
+        if stream == True:
+            plot_sim_waves(triangle_wave, 'Triangle Wave', stream=True)
+        else:
+            plot_sim_waves(triangle_wave, 'Triangle Wave')
 
     return triangle_wave
 
 
-def square_wave(duration=10, sampling_rate=100, amplitude=1, frequency=1, show=False):
+def square_wave(duration=10, sampling_rate=100, amplitude=1, frequency=1, show=False, stream=False):
     """
     Generate a square wave signal.
 
@@ -119,12 +130,15 @@ def square_wave(duration=10, sampling_rate=100, amplitude=1, frequency=1, show=F
     square_wave = amplitude * (2 * (2 * np.floor(frequency * time) - np.floor(2 * frequency * time)) + 1)
 
     if show:
-        plot_sim_waves(square_wave, 'Square Wave')
+        if stream == True:
+            plot_sim_waves(square_wave, 'Square Wave', stream=True)
+        else:
+            plot_sim_waves(square_wave, 'Square Wave')
 
     return square_wave
 
 
-def chirp_wave_linear(duration=10, sampling_rate=100, f0=1, c=1, phase=0, show=False):
+def chirp_wave_linear(duration=10, sampling_rate=100, f0=1, c=1, phase=0, show=False, stream=False):
     """
     Generate a linear chirp wave signal.
 
@@ -160,13 +174,16 @@ def chirp_wave_linear(duration=10, sampling_rate=100, f0=1, c=1, phase=0, show=F
     chirp_wave = np.sin(phase + 2 * np.pi * ((c / 2) * (time ** 2) + f0 * time))
 
     if show:
-        plot_sim_waves(chirp_wave, 'Chirp Wave Linear')
+        if stream == True:
+            plot_sim_waves(chirp_wave, 'Chirp Wave Linear', stream=True)
+        else:
+            plot_sim_waves(chirp_wave, 'Chirp Wave Linear')
 
     return chirp_wave
 
 
 
-def chirp_wave_exponential(duration=10, sampling_rate=100, f0=1, k=1.2, phase=0, show=False):
+def chirp_wave_exponential(duration=10, sampling_rate=100, f0=1, k=1.2, phase=0, show=False, stream=False):
     """
     Generate an exponential chirp wave signal.
 
@@ -203,12 +220,15 @@ def chirp_wave_exponential(duration=10, sampling_rate=100, f0=1, k=1.2, phase=0,
     chirp_wave = np.sin(phase + 2 * np.pi * f0 * ((k ** time - 1) / np.log(k)))
 
     if show:
-        plot_sim_waves(chirp_wave, 'Chirp Wave Exponential')
+        if stream == True:
+            plot_sim_waves(chirp_wave, 'Chirp Wave Exponential', stream=True)
+        else:
+            plot_sim_waves(chirp_wave, 'Chirp Wave Exponential')
 
     return chirp_wave
 
 
-def chirp_wave_hyperbolic(duration=10, sampling_rate=100, f0=1, f1=10, phase=0, show=False):
+def chirp_wave_hyperbolic(duration=10, sampling_rate=100, f0=1, f1=10, phase=0, show=False, stream=False):
     """
     Generate a hyperbolic chirp wave signal.
 
@@ -242,11 +262,14 @@ def chirp_wave_hyperbolic(duration=10, sampling_rate=100, f0=1, f1=10, phase=0, 
     chirp_wave = np.sin(phase + 2 * np.pi * ((-1 * f0 * f1 * duration) / (f1 - f0) * np.log(1 - (f1 - f0) / (f1 * duration) * time)))
 
     if show:
-        plot_sim_waves(chirp_wave, 'Chirp Wave Hyperbolic')
+        if stream == True:
+            plot_sim_waves(chirp_wave, 'Chirp Wave Hyperbolic', stream=True)
+        else:
+            plot_sim_waves(chirp_wave, 'Chirp Wave Hyperbolic')
 
     return chirp_wave
 
-def pulse_wave(duration=10, sampling_rate=100, amplitude=1, d=0.5, frequency=1, expansion=5, show=False):
+def pulse_wave(duration=10, sampling_rate=100, amplitude=1, d=0.5, frequency=1, expansion=5, show=False, stream=False):
     """
     Generate a pulse wave signal.
 
@@ -284,12 +307,15 @@ def pulse_wave(duration=10, sampling_rate=100, amplitude=1, d=0.5, frequency=1, 
     pulse_wave = amplitude * d * (1 + 2 * sum_of_)
 
     if show:
-        plot_sim_waves(pulse_wave, 'Pulse Wave')
+        if stream == True:
+            plot_sim_waves(pulse_wave, 'Pulse Wave', stream=True)
+        else:
+            plot_sim_waves(pulse_wave, 'Pulse Wave')
 
     return pulse_wave
 
 
-def gaussian_pulse(duration=10, sampling_rate=10, amplitude=1, frequency=5, bandwidth=0.5, show=False):
+def gaussian_pulse(duration=10, sampling_rate=10, amplitude=1, frequency=5, bandwidth=0.5, show=False, stream=False):
     # Define the time array    
     t = np.linspace(-1, 1, duration * sampling_rate, endpoint=False)
 
@@ -303,12 +329,15 @@ def gaussian_pulse(duration=10, sampling_rate=10, amplitude=1, frequency=5, band
         plt.ylabel('Amplitude')
         plt.title('Gaussian Pulse')
         plt.grid(True)
-        plt.show()
+        if stream == True:
+            st.pyplot(plt)
+        else:
+            plt.show()
 
     return pulse
 
 
-def impulse(duration=100, amplitude=1, show=False):
+def impulse(duration=100, amplitude=1, show=False, stream=False):
     # Generate the Gaussian pulse
     impulse = unit_impulse(duration, 'mid') * amplitude
 
@@ -319,7 +348,10 @@ def impulse(duration=100, amplitude=1, show=False):
         plt.ylabel('Amplitude')
         plt.title('Impulse')
         plt.grid(True)
-        plt.show()
+        if stream == True:
+            st.pyplot(plt)
+        else:
+            plt.show()
 
     return impulse
 
@@ -328,7 +360,7 @@ def impulse(duration=100, amplitude=1, show=False):
 # ==============================================================================
 
 
-def add_white_noise(signal, noise_amplitude=0.1, model=0, show=False):
+def add_white_noise(signal, noise_amplitude=0.1, model=0, show=False, stream=False):
     """
     Add white noise to a signal.
 
@@ -367,13 +399,16 @@ def add_white_noise(signal, noise_amplitude=0.1, model=0, show=False):
 
     if show:
         # If requested, plot the original and noisy signals
-        plot_noise_signal(signal, noisy_signal, 'Add White Noise')
+        if stream == True:
+            plot_noise_signal(signal, noisy_signal, 'Add White Noise', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, 'Add White Noise')
 
     return noisy_signal
 
 
 def add_band_limited_white_noise(
-        signal, noise_amplitude=0.1, sampling_rate=100, lowcut=0.1, highcut=5, order=3, show=False
+        signal, noise_amplitude=0.1, sampling_rate=100, lowcut=0.1, highcut=5, order=3, show=False, stream=False
 ):
     """
     Add band-limited white noise to a signal.
@@ -418,13 +453,16 @@ def add_band_limited_white_noise(
 
     if show:
         # If requested, plot the original and noisy signals
-        plot_noise_signal(signal, noisy_signal, 'Add Band-limited White Noise')
+        if stream == True:
+            plot_noise_signal(signal, noisy_signal, 'Add Band-limited White Noise', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, 'Add Band-limited White Noise')
 
     return noisy_signal
 
 
 def add_impulsive_noise(
-        signal, noise_amplitude=1, rate=None, number=None, show=False
+        signal, noise_amplitude=1, rate=None, number=None, show=False, stream=False
 ):
     """
     Add impulsive noise to a signal.
@@ -463,23 +501,28 @@ def add_impulsive_noise(
             pob_rate = 1
         pob = [1 - pob_rate, pob_rate]
     else:
+        if stream == True:
+            st.write("unable to determine probability distribution based on inputs")           
         return None
-
+    
     # Generate impulsive noise events based on the probability distribution
     impulsive_noise = np.random.choice([0, 1], size=num_samples, p=pob) * np.random.normal(0, amp, num_samples)
 
     # Add the impulsive noise to the input signal
     noisy_signal = np.abs(impulsive_noise) + signal
-
+    
     if show:
         # If requested, plot the original and noisy signals
-        plot_noise_signal(signal, noisy_signal, 'Add Impulsive Noise')
+        if stream == True:
+            plot_noise_signal(signal, noisy_signal, 'Add Impulsive Noise', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, 'Add Impulsive Noise')
 
     return noisy_signal
 
 
 def add_burst_noise(
-        signal, noise_amplitude=0.3, burst_num_max=1, burst_durations=[10, 100], show=False
+        signal, noise_amplitude=0.3, burst_num_max=1, burst_durations=[10, 100], show=False, stream=False
 ):
     """
     Add burst noise to a signal.
@@ -531,12 +574,15 @@ def add_burst_noise(
 
     if show:
         # If requested, plot the original and noisy signals
-        plot_noise_signal(signal, noisy_signal, 'Add Burst Noise')
+        if stream == True:
+            plot_noise_signal(signal, noisy_signal, 'Add Burst Noise', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, 'Add Burst Noise')
 
     return noisy_signal
 
 
-def add_colored_noise(signal, noise_amplitude=0.3, model='white', sampling_rate=100, duration=10, show=False):
+def add_colored_noise(signal, noise_amplitude=0.3, model='white', sampling_rate=100, duration=10, show=False, stream=False):
     """
     Add colored noise to a given signal.
 
@@ -591,12 +637,15 @@ def add_colored_noise(signal, noise_amplitude=0.3, model='white', sampling_rate=
 
     if show:
         # If requested, plot the original and noisy signals
-        plot_noise_signal(signal, noisy_signal, 'Add ' + model.capitalize() + ' Noise')
+        if stream == True:
+            plot_noise_signal(signal, noisy_signal, 'Add ' + model.capitalize() + ' Noise', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, 'Add ' + model.capitalize() + ' Noise')
 
     return noisy_signal
 
 def add_flicker_noise(
-        signal, noise_amplitude=0.3, sampling_rate=100, duration=10, show=False
+        signal, noise_amplitude=0.3, sampling_rate=100, duration=10, show=False, stream=False
 ):
     """
     Add flicker (1/f) noise to a signal.
@@ -649,12 +698,15 @@ def add_flicker_noise(
 
     if show:
         # If requested, plot the original and noisy signals
-        plot_noise_signal(signal, noisy_signal, 'Add Flicker Noise')
+        if stream == True:
+            plot_noise_signal(signal, noisy_signal, 'Add Flicker Noise', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, 'Add Flicker Noise')
 
     return noisy_signal
 
 def add_thermal_noise(
-        signal, noise_amplitude=0.3, sampling_rate=100, duration=10, Temperature=100, show=False
+        signal, noise_amplitude=0.3, sampling_rate=100, duration=10, Temperature=100, show=False, stream=False
 ):
     """
     Add thermal noise to a signal.
@@ -701,13 +753,16 @@ def add_thermal_noise(
 
     if show:
         # If requested, plot the original and noisy signals
-        plot_noise_signal(signal, noisy_signal, 'Add Thermal Noise')
+        if stream == True:
+            plot_noise_signal(signal, noisy_signal, 'Add Thermal Noise', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, 'Add Thermal Noise')
 
     return noisy_signal
 
 
 def add_powerline_noise(
-        signal, sampling_rate=100, duration=10, powerline_frequency=50, powerline_amplitude=0.1, show=False
+        signal, sampling_rate=100, duration=10, powerline_frequency=50, powerline_amplitude=0.1, show=False, stream=True
 ):
     """
     Add powerline noise (mains hum) to a signal.
@@ -734,11 +789,18 @@ def add_powerline_noise(
 
     # Check if the specified powerline frequency is above the Nyquist frequency
     if powerline_frequency > nyquist:
-        print(
-            f"Skipping requested noise frequency of {powerline_frequency} Hz since it cannot be resolved at "
-            f"the sampling rate of {sampling_rate} Hz. Please increase sampling rate to {sampling_rate * 2.5} Hz or choose "
-            f"frequencies smaller than or equal to {nyquist} Hz."
-        )
+        if stream == True:
+            st.write(
+                f"Skipping requested noise frequency of {powerline_frequency} Hz since it cannot be resolved at "
+                f"the sampling rate of {sampling_rate} Hz. Please increase sampling rate to {sampling_rate * 2.5} Hz or choose "
+                f"frequencies smaller than or equal to {nyquist} Hz."
+            )
+        else:    
+            print(
+                f"Skipping requested noise frequency of {powerline_frequency} Hz since it cannot be resolved at "
+                f"the sampling rate of {sampling_rate} Hz. Please increase sampling rate to {sampling_rate * 2.5} Hz or choose "
+                f"frequencies smaller than or equal to {nyquist} Hz."
+            )
         return np.zeros(len(signal))
 
     # Calculate the standard deviation of the input signal
@@ -757,14 +819,17 @@ def add_powerline_noise(
 
     if show:
         # If requested, plot the original and noisy signals
-        plot_noise_signal(signal, noisy_signal, 'Add Powerline Noise')
+        if stream == True:
+            plot_noise_signal(signal, noisy_signal, 'Add Powerline Noise', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, 'Add Powerline Noise')
 
     return noisy_signal
 
 
 
 def add_echo_noise(
-    signal, n_echo=5, attenuation_factor=[0.5, 0.4, 0.3, 0.2, 0.1], delay_factor=[5] * 5, show=False
+    signal, n_echo=5, attenuation_factor=[0.5, 0.4, 0.3, 0.2, 0.1], delay_factor=[5] * 5, show=False, stream=False
 ):
     """
     Add echo noise to a signal.
@@ -813,13 +878,16 @@ def add_echo_noise(
 
     if show:
         # If requested, plot the original and noisy signals
-        plot_noise_signal(signal, noisy_signal, 'Add Echo Noise')
+        if stream == True:
+            plot_noise_signal(signal, noisy_signal, 'Add Echo Noise', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, 'Add Echo Noise')
 
     return noisy_signal
 
 
 def add_click_noise(
-    signal, noise_amplitude=0.1, n_click=5, show=False
+    signal, noise_amplitude=0.1, n_click=5, show=False, stream=False
 ):
     """
     Add click noise to a signal.
@@ -858,13 +926,16 @@ def add_click_noise(
     noisy_signal = _click_noise + signal
 
     if show:
-        plot_noise_signal(signal, noisy_signal, 'Add Click Noise')
+        if stream == True:
+            plot_noise_signal(signal, noisy_signal, 'Add Click Noise', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, 'Add Click Noise')
 
     return noisy_signal
 
 
 def add_distort_noise(
-    signal, n_samples, sampling_rate=100, noise_frequency=10, noise_amplitude=0.1, show=False):
+    signal, n_samples, sampling_rate=100, noise_frequency=10, noise_amplitude=0.1, show=False, stream=False):
     """
     Generate a noisy signal with distorted noise.
 
@@ -929,7 +1000,10 @@ def add_distort_noise(
 
     # If requested, plot the original and noisy signals
     if show:
-        plot_noise_signal(signal, noisy_signal, f'Add Noise of {noise_frequency} Hz')
+        if stream ==  True:
+            plot_noise_signal(signal, noisy_signal, f'Add Noise of {noise_frequency} Hz', stream=True)
+        else:
+            plot_noise_signal(signal, noisy_signal, f'Add Noise of {noise_frequency} Hz')
 
     return noisy_signal
 
@@ -1024,7 +1098,9 @@ def scg_simulate(**kwargs):
         'delay_factor' : [5] * 3,
         'random_state' : None,
         'silent' : False,
-        'data_file' : "./data.npy"
+        'data_file' : "./data.npy",
+        'label_data' : "heart rate",
+        'save_data' : False
     }
 
     args.update(kwargs)
@@ -1069,11 +1145,45 @@ def scg_simulate(**kwargs):
         simulated_data.append(list(data)+[0]+[ind]+[heart_rate]+[respiratory_rate]+[systolic]+[diastolic])
 
     simulated_data = np.asarray(simulated_data)
-    if args['num_rows'] == 1:
+    print("Selected Label: ",args['label_data'])
+
+    scg_data = pd.DataFrame(simulated_data)
+
+    if args['save_data'] == True:
+        if args['label_data'] == 'heart rate':
+            labels = simulated_data[:, -4]
+            labels = labels.reshape(-1, 1)
+            simulated_data = simulated_data[:, :-4]
+            simulated_data = np.concatenate((simulated_data,labels),axis=1)            
+            save_numpy_array(simulated_data)
+        elif args['label_data'] == 'respiratory rate':
+            labels = simulated_data[:, -3]
+            labels = labels.reshape(-1, 1)
+            simulated_data = simulated_data[:, :-4]
+            simulated_data = np.concatenate((simulated_data,labels),axis=1)
+            save_numpy_array(simulated_data)
+        elif args['label_data'] == 'systolic pressure':
+            labels = simulated_data[:, -2]
+            labels = labels.reshape(-1, 1)
+            simulated_data = simulated_data[:, :-4]
+            simulated_data = np.concatenate((simulated_data,labels),axis=1)
+            save_numpy_array(simulated_data)
+        elif args['label_data'] == 'systolic pressure':
+            labels = simulated_data[:, -1]
+            labels = labels.reshape(-1, 1)
+            simulated_data = simulated_data[:, :-4]
+            simulated_data = np.concatenate((simulated_data,labels),axis=1)
+            save_numpy_array(simulated_data)
+        else:
+            save_numpy_array(simulated_data)
+  
+    elif args['num_rows'] == 1:
         return simulated_data.flatten()
     else:
         np.save(args['data_file'], simulated_data)
         print(f"{args['data_file']} is generated and saved!")
+        
+    return simulated_data
 
 def _scg_simulate(**kwargs):
     """
@@ -1674,7 +1784,7 @@ def _multiply_list(lst, length):
 def standize_1D(signal):
     return (signal - signal.mean()) / signal.std()
 
-def emd_decomposition(signal, show=False):
+def emd_decomposition(signal, show=False, stream=False):
     """
     Perform Empirical Mode Decomposition (EMD) on a 1D signal.
 
@@ -1700,11 +1810,14 @@ def emd_decomposition(signal, show=False):
     #imfs = emd(signal,np.linspace(0,10,len(signal),endpoint=False))
 
     if show:
-        plot_decomposed_components(signal, imfs, 'EMD')
+        if stream == True:
+            plot_decomposed_components(signal, imfs, 'EMD', stream=True)
+        else:
+            plot_decomposed_components(signal, imfs, 'EMD')
 
     return imfs
 
-def eemd_decomposition(signal, noise_width=0.05, ensemble_size=100, show=False):
+def eemd_decomposition(signal, noise_width=0.05, ensemble_size=100, show=False, stream=False):
     """
     Perform Ensemble Empirical Mode Decomposition (EEMD) on a 1D signal.
 
@@ -1733,11 +1846,14 @@ def eemd_decomposition(signal, noise_width=0.05, ensemble_size=100, show=False):
     imfs = eemd.eemd(signal)
 
     if show:
-        plot_decomposed_components(signal, imfs, 'EEMD')
+        if stream == True:
+            plot_decomposed_components(signal, imfs, 'EEMD', stream=True)
+        else:
+            plot_decomposed_components(signal, imfs, 'EEMD')
 
     return imfs
 
-def ceemd_decomposition(signal, show=False):
+def ceemd_decomposition(signal, show=False, stream=False):
     """
     Perform Complete Ensemble Empirical Mode Decomposition with Adaptive Noise (CEEMDAN) on a 1D signal.
 
@@ -1762,13 +1878,16 @@ def ceemd_decomposition(signal, show=False):
     imfs = ceemdan.ceemdan(signal)
 
     if show:
-        plot_decomposed_components(signal, imfs, 'CEEMDAN')
+        if stream ==  True:
+            plot_decomposed_components(signal, imfs, 'CEEMDAN', stream=True)
+        else:
+            plot_decomposed_components(signal, imfs, 'CEEMDAN')
 
     # Return the resulting IMFs
     return imfs
 
 
-def vmd_decomposition(signal, K=5, alpha=2000, tau=0, DC=0, init=1, tol=1e-7, show=False):
+def vmd_decomposition(signal, K=5, alpha=2000, tau=0, DC=0, init=1, tol=1e-7, show=False, stream=True):
     """
     Perform Variational Mode Decomposition (VMD) on a 1D signal.
 
@@ -1802,11 +1921,14 @@ def vmd_decomposition(signal, K=5, alpha=2000, tau=0, DC=0, init=1, tol=1e-7, sh
     u, _, _ = vmd
 
     if show:
-        plot_decomposed_components(signal, u, 'VMD')
+        if stream == True:
+            plot_decomposed_components(signal, u, 'VMD', stream=True)
+        else:
+            plot_decomposed_components(signal, u, 'VMD')
 
     return u
 
-def seasonal_decomposition(signal, period=100, model=0, show=False):
+def seasonal_decomposition(signal, period=100, model=0, show=False, stream=False):
     """
     Perform seasonal decomposition on a time series signal.
 
@@ -1857,7 +1979,10 @@ def seasonal_decomposition(signal, period=100, model=0, show=False):
         plt.plot(components.resid, label='Residual')
         plt.tight_layout()
         plt.legend()
-        plt.show()
+        if stream == True:
+            st.pyplot(plt)
+        else:
+            plt.show()
 
     return components
 
@@ -1977,7 +2102,7 @@ class SSA(object):
                 self.Wcorr[i, j] = abs(w_inner(self.TS_comps[:, i], self.TS_comps[:, j]) * F_wnorms[i] * F_wnorms[j])
                 self.Wcorr[j, i] = self.Wcorr[i, j]
 
-    def plot_wcorr(self, min=None, max=None):
+    def plot_wcorr(self, min=None, max=None, stream=False):
         """
         Plots the w-correlation matrix for the decomposed time series.
         """
@@ -2005,12 +2130,15 @@ class SSA(object):
         plt.xlim(min - 0.5, max_rnge + 0.5)
         plt.ylim(max_rnge + 0.5, min - 0.5)
 
+        if stream == True:
+            st.pyplot(plt)
+
 # ==============================================================================
 # ------------------------------------Filter-------------------------------------
 # ==============================================================================
 
 
-def butter_bandpass_filter(signal, lowcut=1, highcut=10, fs=100, order=5, show=False):
+def butter_bandpass_filter(signal, lowcut=1, highcut=10, fs=100, order=5, show=False, stream=False):
     """
     Apply a bandpass Butterworth filter to the input signal.
 
@@ -2033,10 +2161,13 @@ def butter_bandpass_filter(signal, lowcut=1, highcut=10, fs=100, order=5, show=F
     b, a = butter(order, [lowcut, highcut], btype='bandpass', analog=False, output='ba', fs=fs)
     filtered_signal = lfilter(b, a, signal)
     if show:
-        plot_filtered_signal(filtered_signal, signal, "Bandpass Filter")
+        if stream == True:
+            plot_filtered_signal(filtered_signal, signal, "Bandpass Filter", stream=True)
+        else:
+            plot_filtered_signal(filtered_signal, signal, "Bandpass Filter")
     return filtered_signal
 
-def butter_bandstop_filter(signal, lowcut=1, highcut=10, fs=100, order=5, show=False):
+def butter_bandstop_filter(signal, lowcut=1, highcut=10, fs=100, order=5, show=False, stream=False):
     """
     Apply a bandstop Butterworth filter to the input signal.
 
@@ -2059,10 +2190,13 @@ def butter_bandstop_filter(signal, lowcut=1, highcut=10, fs=100, order=5, show=F
     b, a = butter(order, [lowcut, highcut], btype='bandstop', analog=False, output='ba', fs=fs)
     filtered_signal = lfilter(b, a, signal)
     if show:
-        plot_filtered_signal(filtered_signal, signal, "Bandstop Filter")
+        if stream == True:
+            plot_filtered_signal(filtered_signal, signal, "Bandstop Filter", stream=True)
+        else:
+            plot_filtered_signal(filtered_signal, signal, "Bandstop Filter")
     return filtered_signal
 
-def butter_lowpass_filter(signal, cutoff=10, fs=100, order=5, show=False):
+def butter_lowpass_filter(signal, cutoff=10, fs=100, order=5, show=False, stream=False):
     """
     Apply a lowpass Butterworth filter to the input signal.
 
@@ -2084,11 +2218,14 @@ def butter_lowpass_filter(signal, cutoff=10, fs=100, order=5, show=False):
     filtered_signal = lfilter(b, a, signal)
 
     if show:
-        plot_filtered_signal(filtered_signal, signal, "Lowpass Filter")
+        if stream == True:
+            plot_filtered_signal(filtered_signal, signal, "Lowpass Filter", stream=True)
+        else:
+            plot_filtered_signal(filtered_signal, signal, "Lowpass Filter")
 
     return filtered_signal
 
-def butter_highpass_filter(signal, cutoff=10, fs=100, order=5, show=False):
+def butter_highpass_filter(signal, cutoff=10, fs=100, order=5, show=False, stream=False):
     """
     Apply a highpass Butterworth filter to the input signal.
 
@@ -2110,11 +2247,14 @@ def butter_highpass_filter(signal, cutoff=10, fs=100, order=5, show=False):
     filtered_signal = lfilter(b, a, signal)
 
     if show:
-        plot_filtered_signal(filtered_signal, signal, "Highpass Filter")
+        if stream == True:
+            plot_filtered_signal(filtered_signal, signal, "Highpass Filter", stream=True)
+        else:
+            plot_filtered_signal(filtered_signal, signal, "Highpass Filter")
 
     return filtered_signal
 
-def simple_moving_average_filter(signal, length=10, show=False):
+def simple_moving_average_filter(signal, length=10, show=False, stream=False):
     """
     Apply a Simple Moving Average (SMA) filter to smooth the input signal.
 
@@ -2134,11 +2274,14 @@ def simple_moving_average_filter(signal, length=10, show=False):
     filtered_signal = np.convolve(signal, SMA, 'same')
 
     if show:
-        plot_filtered_signal(filtered_signal, signal, "Simple Moving Average Filter")
+        if stream == True:
+            plot_filtered_signal(filtered_signal, signal, "Simple Moving Average Filter", stream=True)
+        else:
+            plot_filtered_signal(filtered_signal, signal, "Simple Moving Average Filter")
 
     return filtered_signal
 
-def exponential_moving_average_filter(signal, length=10, alpha=None, show=False):
+def exponential_moving_average_filter(signal, length=10, alpha=None, show=False, stream=False):
     """
     Apply an Exponential Moving Average (EMA) filter to smooth the input signal.
 
@@ -2166,11 +2309,14 @@ def exponential_moving_average_filter(signal, length=10, alpha=None, show=False)
     filtered_signal = np.convolve(signal, EMA, 'same')
 
     if show:
-        plot_filtered_signal(filtered_signal, signal, "Exponential Moving Average Filter")
+        if stream == True:
+            plot_filtered_signal(filtered_signal, signal, "Exponential Moving Average Filter", stream=True)
+        else:
+            plot_filtered_signal(filtered_signal, signal, "Exponential Moving Average Filter")
 
     return filtered_signal
 
-def savgol_filter(signal, window_length=32, polyorder=1, deriv=0, delta=1.0, show=False):
+def savgol_filter(signal, window_length=32, polyorder=1, deriv=0, delta=1.0, show=False, stream=False):
     """
     Apply a Savitzky-Golay filter to the input signal for smoothing.
 
@@ -2191,11 +2337,14 @@ def savgol_filter(signal, window_length=32, polyorder=1, deriv=0, delta=1.0, sho
     filtered_signal = scipy.signal.savgol_filter(signal, window_length, polyorder, deriv, delta)
 
     if show:
-        plot_filtered_signal(filtered_signal, signal, "Savitzky-Golay Filter")
+        if stream == True:
+            plot_filtered_signal(filtered_signal, signal, "Savitzky-Golay Filter", stream=True)
+        else:
+            plot_filtered_signal(filtered_signal, signal, "Savitzky-Golay Filter")
 
     return filtered_signal
 
-def wiener_filter(signal, noise, show=False):
+def wiener_filter(signal, noise, show=False, stream=False):
     """
     Apply a Wiener filter to the input signal for noise reduction.
 
@@ -2230,12 +2379,15 @@ def wiener_filter(signal, noise, show=False):
     filtered_signal = np.fft.ifft(filtered_signal)
 
     if show:
-        plot_filtered_signal(filtered_signal, signal, "Wiener Filter")
+        if stream == True:
+            plot_filtered_signal(filtered_signal, signal, "Wiener Filter", stream=True)
+        else:
+            plot_filtered_signal(filtered_signal, signal, "Wiener Filter")
 
     return filtered_signal
 
 
-def rls_filter(x, d, n, mu, show=False):
+def rls_filter(x, d, n, mu, show=False, stream=False):
     """
     Apply Recursive Least Squares (RLS) filter to input signal x to estimate a desired signal d.
 
@@ -2266,12 +2418,15 @@ def rls_filter(x, d, n, mu, show=False):
     y, e, w = f.run(d_np, x_np)
 
     if show:
-        plot_filtered_signal(y, x, "Recursive Least Squares (RLS) Filter")
+        if stream == True:
+            plot_filtered_signal(y, x, "Recursive Least Squares (RLS) Filter", stream=True)
+        else:
+            plot_filtered_signal(y, x, "Recursive Least Squares (RLS) Filter")
 
     return y, e, w
 
 
-def lms_filter(x, d, n, mu, show=False):
+def lms_filter(x, d, n, mu, show=False, stream=False):
     """
     Apply Least Mean Squares (LMS) filter to input signal x to estimate a desired signal d.
 
@@ -2302,11 +2457,14 @@ def lms_filter(x, d, n, mu, show=False):
     y, e, w = f.run(d_np, x_np)
 
     if show:
-        plot_filtered_signal(y, x, "Least Mean Squares (LMS) Filter")
+        if stream == True:
+            plot_filtered_signal(y, x, "Least Mean Squares (LMS) Filter", stream=True)
+        else:
+            plot_filtered_signal(y, x, "Least Mean Squares (LMS) Filter")
 
     return y, e, w
 
-def notch_filter(signal, cutoff=10, q=10, fs=100, show=False):
+def notch_filter(signal, cutoff=10, q=10, fs=100, show=False, stream=False):
     """
     Apply a Notch Filter to Remove Interference at a Specific Frequency.
 
@@ -2337,11 +2495,14 @@ def notch_filter(signal, cutoff=10, q=10, fs=100, show=False):
     filtered_signal = lfilter(b, a, signal)
 
     if show:
-        plot_filtered_signal(filtered_signal, signal, "Notch Filter")
+        if stream == True:
+            plot_filtered_signal(filtered_signal, signal, "Notch Filter", stream=True)
+        else:
+            plot_filtered_signal(filtered_signal, signal, "Notch Filter")
 
     return filtered_signal
 
-def matched_filter(signal, template, show=False):
+def matched_filter(signal, template, show=False, stream=False):
     """
     Apply matched filter to a signal using a template.
 
@@ -2368,12 +2529,15 @@ def matched_filter(signal, template, show=False):
         plt.plot(filtered_signal, label='Filtered Signal')
         plt.title("Matched Filter")
         plt.legend()
-        plt.show()
+        if stream == True:
+            st.pyplot(plt)
+        else:
+            plt.show()
 
     return filtered_signal
 
 
-def fft_denoise(signal, threshold, show=False):
+def fft_denoise(signal, threshold, show=False, stream=False):
     """
     Applies FFT-based denoising to a signal.
 
@@ -2394,12 +2558,15 @@ def fft_denoise(signal, threshold, show=False):
     ffilt = ffilt.real  # Take the real part of the inverse FFT
 
     if show:
-        plot_filtered_signal(ffilt, signal, "FFT Denoising")
+        if stream == True:
+            plot_filtered_signal(ffilt, signal, "FFT Denoising", stream=True)
+        else:
+            plot_filtered_signal(ffilt, signal, "FFT Denoising")
 
     return ffilt
 
 
-def wavelet_denoise(data, method, threshold, show=False,title="Wavelet Denoising"):
+def wavelet_denoise(data, method, threshold, show=False, title="Wavelet Denoising", stream=False):
     """
     Applies wavelet-based denoising to the input data.
 
@@ -2432,7 +2599,10 @@ def wavelet_denoise(data, method, threshold, show=False,title="Wavelet Denoising
     datarec = pywt.waverec(coeffs, method)
 
     if show:
-        plot_filtered_signal(datarec, data, title)
+        if stream == True:
+            plot_filtered_signal(datarec, data, title, stream=True)
+        else:
+            plot_filtered_signal(datarec, data, title)
 
     return datarec
 
@@ -2559,7 +2729,7 @@ def dtw_easy(x, y, dist, warp=1, s=1.0):
         path = _traceback(D0)
     return D1[-1, -1], C, D1, path
 
-def performSOFTDBA(pieces, show=False):
+def performSOFTDBA(pieces, show=False, stream=False):
     """
     Perform Soft-DTW Barycenter Averaging (SOFTDBA) on a list of time series pieces.
 
@@ -2578,12 +2748,15 @@ def performSOFTDBA(pieces, show=False):
     """
     center = softdtw_barycenter(pieces)
     if show:
-        plot_averaging_center(center, pieces)
+        if stream == True:
+            plot_averaging_center(center, pieces, stream=True)
+        else:
+            plot_averaging_center(center, pieces)
     return center
 
 
 
-def performICDTW(pieces, iter_max=10, dist=lambda x, y: np.abs(x - y), Beta_A1=1e-5, Beta_A2=1e5, Beta_B=1, show=False):
+def performICDTW(pieces, iter_max=10, dist=lambda x, y: np.abs(x - y), Beta_A1=1e-5, Beta_A2=1e5, Beta_B=1, show=False, stream=False):
     """
     Perform Iterative Constrained Dynamic Time Warping (ICDTW) on a list of time series pieces.
 
@@ -2709,11 +2882,14 @@ def performICDTW(pieces, iter_max=10, dist=lambda x, y: np.abs(x - y), Beta_A1=1
         weights = weights[2:]
 
     if show:
-        plot_averaging_center(pieces[0], original_pieces)
+        if stream == True:
+            plot_averaging_center(pieces[0], original_pieces, stream=True)
+        else:
+            plot_averaging_center(pieces[0], original_pieces)
 
     return pieces[0]
 
-def performDBA(series, n_iterations=10, show=False):
+def performDBA(series, n_iterations=10, show=False, stream=False):
     """ author is Francois Petitjean
         References:
             Petitjean, François, Alain Ketterlin, and Pierre Gançarski.
@@ -2854,7 +3030,10 @@ def performDBA(series, n_iterations=10, show=False):
         center = DBA_update(center, series, cost_mat, path_mat, delta_mat)
 
     if show:
-        plot_averaging_center(center, series)
+        if stream == True:
+            plot_averaging_center(center, series, stream=True)
+        else:
+            plot_averaging_center(center, series)
 
     return center
 
@@ -2879,7 +3058,7 @@ def make_template(piece0, piece1, path):
     return template
 
 
-def performNLAAF1(pieces, dist=lambda x, y: np.abs(x - y), show=False):
+def performNLAAF1(pieces, dist=lambda x, y: np.abs(x - y), show=False, stream=False):
     """
     Perform Non-Linear Adaptive Averaging Filter 1 (NLAAF1) on a list of time series pieces.
 
@@ -2925,12 +3104,15 @@ def performNLAAF1(pieces, dist=lambda x, y: np.abs(x - y), show=False):
     center = np.array(this_term[0])
 
     if show:
-        plot_averaging_center(center, pieces)
+        if stream == True:
+            plot_averaging_center(center, pieces, stream=True)
+        else:
+            plot_averaging_center(center, pieces)
 
     return center
 
 
-def performNLAAF2(pieces, dist=lambda x, y: np.abs(x - y), show=False):
+def performNLAAF2(pieces, dist=lambda x, y: np.abs(x - y), show=False, stream=False):
     """
     Perform  Non-Linear Adaptive Averaging Filter 2 (NLAAF2) on a list of time series pieces.
 
@@ -2954,7 +3136,10 @@ def performNLAAF2(pieces, dist=lambda x, y: np.abs(x - y), show=False):
         template = make_template(template, pieces[cnt], path)
 
     if show:
-        plot_averaging_center(template, pieces)
+        if stream == True:
+            plot_averaging_center(template, pieces, stream=True)
+        else:
+            plot_averaging_center(template, pieces)
 
     return template
 
@@ -2968,7 +3153,7 @@ import pickle
 def calc_mae(gt, pred):
     return np.mean(abs(np.array(gt) - np.array(pred)))
 
-def plot_2vectors(label, pred, save=False, name=None, path=None):
+def plot_2vectors(label, pred, save=False, name=None, path=None, stream=False):
     """lsit1: label, list2: prediction"""
 
     list1 = label
@@ -2993,7 +3178,10 @@ def plot_2vectors(label, pred, save=False, name=None, path=None):
         plt.savefig(f'{path}.jpg', dpi=300)
         print(f'Saved plot to {path}.jpg')
 
-    plt.show()
+    if stream == True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
 
 def ls2pkl(filepath, data):
@@ -3014,7 +3202,7 @@ def dicl2ls(filepath):
         data = pickle.load(f)
     return data
 
-def plot_noise_signal(original_signal, noisy_signal, title_name):
+def plot_noise_signal(original_signal, noisy_signal, title_name, stream=False):
     plt.figure(figsize=(8, 3))
     plt.plot(noisy_signal, label='Noisy Signal')
     plt.plot(original_signal, label='Original Signal')
@@ -3022,9 +3210,12 @@ def plot_noise_signal(original_signal, noisy_signal, title_name):
     plt.xlabel('Time')
     plt.title(title_name)
     plt.legend()
-    plt.show()
+    if stream == True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
-def plot_decomposed_components(signal, components, title_name):
+def plot_decomposed_components(signal, components, title_name, stream=False):
     n_components = len(components)
 
     plt.subplots(n_components+1, 1, figsize=(8, 2*(n_components+1)))
@@ -3041,9 +3232,12 @@ def plot_decomposed_components(signal, components, title_name):
     plt.ylabel('Amplitude')
     plt.xlabel('Time')
     plt.tight_layout()
-    plt.show()
+    if stream == True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
-def plot_filtered_signal(filtered_signal, signal, title_name):
+def plot_filtered_signal(filtered_signal, signal, title_name, stream=False):
     plt.figure(figsize=(8, 3))
     plt.plot(signal, label='Original Signal', alpha=0.6)
     plt.plot(filtered_signal, label='Filtered Signal')
@@ -3051,18 +3245,24 @@ def plot_filtered_signal(filtered_signal, signal, title_name):
     plt.xlabel('Time')
     plt.title(title_name)
     plt.legend()
-    plt.show()
+    if stream == True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
-def plot_sim_waves(signal, wave_name):
+def plot_sim_waves(signal, wave_name, stream=False):
     plt.figure(figsize=(8, 3))
     plt.plot(signal, label=wave_name)
     plt.ylabel('Amplitude')
     plt.xlabel('Time')
     plt.title('Generated Wave')
     plt.legend()
-    plt.show()
+    if stream == True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
-def plot_adp_filtered_signal(y, d_signal, error):
+def plot_adp_filtered_signal(y, d_signal, error, stream=False):
     plt.subplots(2, 1, figsize=(8, 6))
 
     plt.subplot(211)
@@ -3081,9 +3281,12 @@ def plot_adp_filtered_signal(y, d_signal, error):
     plt.legend()
 
     plt.tight_layout()
-    plt.show()
+    if stream == True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
-def plot_averaging_center(center, pieces):
+def plot_averaging_center(center, pieces, stream=False):
     plt.figure(figsize=(8, 3))
     plt.title("Center of Signal Pieces")
     for piece in pieces:
@@ -3092,15 +3295,21 @@ def plot_averaging_center(center, pieces):
     plt.ylabel('Amplitude')
     plt.xlabel('Time')
     plt.legend()
-    plt.show()
+    if stream == True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
-def plot_psd(noise, fs=100):
+def plot_psd(noise, fs=100, stream=False):
     frequencies, psd = plt.psd(noise, Fs=fs)
     plt.title('Power Spectral Density')
     plt.xlabel('Frequency (Hz)')
     plt.ylabel('Power/Frequency (dB/Hz)')
     plt.grid(True)
-    plt.show()
+    if stream == True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
 # Time Domain
 ## Template of SCG
@@ -3416,7 +3625,7 @@ def psd(signal, fs):
 # Time-Frequency Domain
 ## Short Time Fourier Transform (STFT)
 def my_stft(signal, fs, plot=False, window='hann', nperseg=256, noverlap=None, nfft=None, detrend=False,
-            return_onesided=True, boundary='zeros', padded=True, axis=-1, scaling='spectrum'):
+            return_onesided=True, boundary='zeros', padded=True, axis=-1, scaling='spectrum', stream=False):
     """
     Description:
         Compute the Linear Spectrogram of a signal using Short-time Fourier Transform (STFT).
@@ -3441,7 +3650,10 @@ def my_stft(signal, fs, plot=False, window='hann', nperseg=256, noverlap=None, n
         plt.xlabel("Time/S")
         plt.ylabel("Frequency")
         plt.colorbar(label='Magnitude')
-        plt.show()
+        if stream == True:
+            st.pyplot(plt)
+        else:
+            plt.show()
     return f, t, Z
 
 ## Wavelet Analysis
@@ -3477,7 +3689,7 @@ def morlet_wavelet(length, sigma, a=5):
     return morlet_wav
 
 ### Continues Wavelet Transform (CWT)
-def my_cwt(signal, scales, wavelet, fs, show=False):
+def my_cwt(signal, scales, wavelet, fs, show=False, stream=False):
     """
     Description:
         Compute the cwt of the input signal
@@ -3503,12 +3715,15 @@ def my_cwt(signal, scales, wavelet, fs, show=False):
         plt.title('Continuous Wavelet Transform')
         plt.xlabel('Time/s')
         plt.ylabel('Frequency')
-        plt.show()
+        if stream == True:
+            st.pyplot(plt)
+        else:
+            plt.show()
     return coefficients, frequencies
 
 ## Polynomial Chirplet Transform (PCT)
 ### Chirplet Transform
-def chirplet_transform(signal, show=False):
+def chirplet_transform(signal, show=False, stream=False):
     """
     Description:
         Generate the chirplet_trainsform of the input signal
@@ -3526,6 +3741,9 @@ def chirplet_transform(signal, show=False):
         plt.ylabel("Frequency")
         plt.imshow(ct_matrix, aspect="auto")
         plt.colorbar(label="Magnitude")
+        if stream == True:
+            st.pyplot(plt)
+    
     return ct_matrix
 
 
@@ -3628,7 +3846,8 @@ class FCT:
 
         # pad with 0 to have the right length of signal
 
-        data = np.lib.pad(input_signal, (0, nearest_power_2 - size_data), 'constant', constant_values=0)
+        #data = np.lib.pad(input_signal, (0, nearest_power_2 - size_data), 'constant', constant_values=0)
+        data = np.pad(input_signal, (0, nearest_power_2 - size_data), 'constant', constant_values=0)
 
         # apply the fct to the adapted length signal
 
@@ -3810,8 +4029,11 @@ def fft_based(input_signal, filter_coefficients, boundary=0):
     half_size = num_coeffs // 2
 
     if boundary == 0:  # ZERO PADDING
-        input_signal = np.lib.pad(input_signal, (half_size, half_size), 'constant', constant_values=0)
-        filter_coefficients = np.lib.pad(filter_coefficients, (0, input_signal.size - num_coeffs), 'constant',
+        #input_signal = np.lib.pad(input_signal, (half_size, half_size), 'constant', constant_values=0)
+        input_signal = np.pad(input_signal, (half_size, half_size), 'constant', constant_values=0)
+        #filter_coefficients = np.lib.pad(filter_coefficients, (0, input_signal.size - num_coeffs), 'constant',
+        #                                 constant_values=0)
+        filter_coefficients = np.pad(filter_coefficients, (0, input_signal.size - num_coeffs), 'constant',
                                          constant_values=0)
         newx = ifft(fft(input_signal) * fft(filter_coefficients))
         return newx[num_coeffs - 1:-1]
@@ -3819,7 +4041,9 @@ def fft_based(input_signal, filter_coefficients, boundary=0):
     elif boundary == 1:  # symmetric
         input_signal = np.concatenate(
             [flipud(input_signal[:half_size]), input_signal, flipud(input_signal[half_size:])])
-        filter_coefficients = np.lib.pad(filter_coefficients, (0, input_signal.size - num_coeffs), 'constant',
+        #filter_coefficients = np.lib.pad(filter_coefficients, (0, input_signal.size - num_coeffs), 'constant',
+        #                                 constant_values=0)
+        filter_coefficients = np.pad(filter_coefficients, (0, input_signal.size - num_coeffs), 'constant',
                                          constant_values=0)
         newx = ifft(fft(input_signal) * fft(filter_coefficients))
         return newx[num_coeffs - 1:-1]
@@ -3854,7 +4078,8 @@ def build_fft(input_signal, filter_coefficients, threshold_windows=6, boundary=0
     # pad with 0 to have a size in a power of 2
     windows_size = int(windows_size)
 
-    zeropadding = np.lib.pad(filter_coefficients, (0, windows_size - num_coeffs), 'constant', constant_values=0)
+    #zeropadding = np.lib.pad(filter_coefficients, (0, windows_size - num_coeffs), 'constant', constant_values=0)
+    zeropadding = np.pad(filter_coefficients, (0, windows_size - num_coeffs), 'constant', constant_values=0)
 
     h_fft = fft(zeropadding)
 
@@ -3867,7 +4092,8 @@ def build_fft(input_signal, filter_coefficients, threshold_windows=6, boundary=0
 
         # window is half padded with since it's focused on the first half
         window = input_signal[current_pos:current_pos + windows_size - half_size]
-        zeropaddedwindow = np.lib.pad(window, (len(h_fft) - len(window), 0), 'constant', constant_values=0)
+        #zeropaddedwindow = np.lib.pad(window, (len(h_fft) - len(window), 0), 'constant', constant_values=0)
+        zeropaddedwindow = np.pad(window, (len(h_fft) - len(window), 0), 'constant', constant_values=0)
         x_fft = fft(zeropaddedwindow)
 
     elif boundary == 1:  # SYMMETRIC
@@ -3893,7 +4119,9 @@ def build_fft(input_signal, filter_coefficients, threshold_windows=6, boundary=0
     if windows_size - (signal_size - current_pos + half_size) < half_size:
 
         window = input_signal[current_pos - half_size:]
-        zeropaddedwindow = np.lib.pad(window, (0, int(windows_size - (signal_size - current_pos + half_size))),
+        #zeropaddedwindow = np.lib.pad(window, (0, int(windows_size - (signal_size - current_pos + half_size))),
+        #                              'constant', constant_values=0)
+        zeropaddedwindow = np.pad(window, (0, int(windows_size - (signal_size - current_pos + half_size))),
                                       'constant', constant_values=0)
         x_fft = fft(zeropaddedwindow)
         windowed_fft[current_pos:] = roll(ifft(x_fft * h_fft), half_size)[
@@ -3902,7 +4130,9 @@ def build_fft(input_signal, filter_coefficients, threshold_windows=6, boundary=0
     else:
 
         window = input_signal[current_pos - half_size:]
-        zeropaddedwindow = np.lib.pad(window, (0, int(windows_size - (signal_size - current_pos + half_size))),
+        #zeropaddedwindow = np.lib.pad(window, (0, int(windows_size - (signal_size - current_pos + half_size))),
+        #                              'constant', constant_values=0)
+        zeropaddedwindow = np.pad(window, (0, int(windows_size - (signal_size - current_pos + half_size))),
                                       'constant', constant_values=0)
         x_fft = fft(zeropaddedwindow)
         windowed_fft[current_pos:] = ifft(x_fft * h_fft)[
@@ -3912,7 +4142,7 @@ def build_fft(input_signal, filter_coefficients, threshold_windows=6, boundary=0
 # chirplet transform function ends here
 
 ## Wigner Ville Distribution (WVD)
-def my_wvd(signal, show=False):
+def my_wvd(signal, show=False, stream=False):
     """
     Description:
         Analyze the time-frequency characteristics of a signal using the Wigner-Ville Transform (WVT) and visualize the results.
@@ -3928,13 +4158,16 @@ def my_wvd(signal, show=False):
     wvd = tftb.processing.WignerVilleDistribution(signal)
     tfr_wvd, t_wvd, f_wvd = wvd.run()
     if show:
-        wvd.plot(kind="contourf", scale="log")
+        if stream == True:
+            st.pyplot(wvd.plot(kind="contourf", scale="log"))
+        else:
+            wvd.plot(kind="contourf", scale="log")
     return tfr_wvd, t_wvd, f_wvd
 
 ## SynchroSqueezing Transform (SST)
 def sst_stft(signal, fs, window, nperseg=256, show=False, n_fft=None, hop_len=1, modulated=True, ssq_freqs=None,
              padtype='reflect', squeezing='sum', gamma=None, preserve_transform=None, dtype=None, astensor=True,
-             flipud=False, get_w=False, get_dWx=False):
+             flipud=False, get_w=False, get_dWx=False, stream=False):
     """
     Description:
         Synchrosqueezed Short-Time Fourier Transform.
@@ -3967,10 +4200,13 @@ def sst_stft(signal, fs, window, nperseg=256, show=False, n_fft=None, hop_len=1,
         plt.imshow(np.abs(Tx), aspect="auto")
         plt.colorbar(label="Magnitude")
         plt.tight_layout()
-        plt.show()
+        if stream ==  True:
+            st.pyplot(plt)
+        else:
+            plt.show()
     return Tx, Sx, ssq_freqs, Sfs
 
-def sst_cwt(signal, wavelet, scales, nv, fs, gamma=None, show=False):
+def sst_cwt(signal, wavelet, scales, nv, fs, gamma=None, show=False, stream=False):
     """
     Description:
         Synchrosqueezed Continuous Wavelet Transform
@@ -4005,7 +4241,10 @@ def sst_cwt(signal, wavelet, scales, nv, fs, gamma=None, show=False):
         plt.xlabel('Time/s')
         plt.ylabel('Frequency')
         plt.tight_layout()
-        plt.show()
+        if stream ==  True:
+            st.pyplot(plt)
+        else:
+            plt.show()
     return Tx, Wx, ssq_freqs, scales
 
 def extract_spectral_entropy(signal, fs, num_segments=10):
@@ -4138,7 +4377,7 @@ def cal_serial_corr(signal, lag):
     signal2 = signal[:len(signal) - lag]
     return np.corrcoef(signal1, signal2)[0, 1]
 
-def cal_autocorr(signal, plot=False):
+def cal_autocorr(signal, plot=False, stream=False):
     """
     Description:
         To get the auto correlate coefficient
@@ -4153,10 +4392,13 @@ def cal_autocorr(signal, plot=False):
     corrs = [cal_serial_corr(signal, lag) for lag in lags]
     if plot:
         plt.plot(lags, corrs)
-        plt.show()
+        if stream ==  True:
+            st.pyplot(plt)
+        else:
+            plt.show()
     return lags, corrs
 
-def generate_class_data(amplitude=None,frequency=None,noise=False,wave_number=10,show=True):
+def generate_class_data(amplitude=None,frequency=None,noise=False,wave_number=10,show=True,stream=False):
   X = []
   count = 0
   # randomize amplitudes and frequencies unless amplitude and/or frequency is set to specific value
@@ -4199,18 +4441,21 @@ def generate_class_data(amplitude=None,frequency=None,noise=False,wave_number=10
 
   if show == True:
     plot = go.Figure()
-    plot.add_trace(go.Scatter(x=X_axis,y=X[0,0:len(X[0])]))
-    plot.add_trace(go.Scatter(x=X_axis,y=X[1,0:len(X[1])]))
-    plot.add_trace(go.Scatter(x=X_axis,y=X[2,0:len(X[2])]))
+    plot.add_trace(go.Scatter(x=X_axis,y=X[0,0:len(X[0])],line_color='blue'))
+    plot.add_trace(go.Scatter(x=X_axis,y=X[1,0:len(X[1])],line_color='red'))
+    plot.add_trace(go.Scatter(x=X_axis,y=X[2,0:len(X[2])],line_color='green'))
     plot.update_layout(title="Data: 1st sample of each waveform type")
-    plot.show()
+    if stream ==  True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
   x = X[:, :X.shape[1]-1]  # data
   y = X[:, -1] # label
 
   return x, y
 
-def generate_anomaly_data(amplitude=None,frequency=None,noise=False,wave_number=10,show=True):
+def generate_anomaly_data(amplitude=None,frequency=None,noise=False,wave_number=10,show=True,stream=False):
   X = []
   count = 0
   # randomize amplitudes and frequencies unless amplitude and/or frequency is set to specific value
@@ -4244,10 +4489,13 @@ def generate_anomaly_data(amplitude=None,frequency=None,noise=False,wave_number=
 
   if show == True:
     plot = go.Figure()
-    plot.add_trace(go.Scatter(x=X_axis,y=X[0,0:len(X[0])]))
-    plot.add_trace(go.Scatter(x=X_axis,y=X[1,0:len(X[1])]))
+    plot.add_trace(go.Scatter(x=X_axis,y=X[0,0:len(X[0])],line_color='blue'))
+    plot.add_trace(go.Scatter(x=X_axis,y=X[1,0:len(X[1])],line_color='red'))
     plot.update_layout(title="Data: 1st sample of each waveform type")
-    plot.show()
+    if stream ==  True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
   x = X[:, :X.shape[1]-1]  # data
   y = X[:, -1] # label
@@ -4255,7 +4503,7 @@ def generate_anomaly_data(amplitude=None,frequency=None,noise=False,wave_number=
   return x, y
 
 
-def generate_regression_data(amplitude=None,frequency=None,noise=False,wave_number=10,show=True,label_type='frequency'):
+def generate_regression_data(amplitude=None,frequency=None,noise=False,wave_number=10,show=True,label_type='frequency',stream=False):
   X = []
   count = 0
   # randomize amplitudes and frequencies unless amplitude and/or frequency is set to specific value
@@ -4308,11 +4556,14 @@ def generate_regression_data(amplitude=None,frequency=None,noise=False,wave_numb
 
   if show == True:
     plot = go.Figure()
-    plot.add_trace(go.Scatter(x=X_axis,y=X[0,0:len(X[0])]))
-    plot.add_trace(go.Scatter(x=X_axis,y=X[1,0:len(X[1])]))
-    plot.add_trace(go.Scatter(x=X_axis,y=X[2,0:len(X[2])]))
+    plot.add_trace(go.Scatter(x=X_axis,y=X[0,0:len(X[0])],line_color='blue'))
+    plot.add_trace(go.Scatter(x=X_axis,y=X[1,0:len(X[1])],line_color='red'))
+    plot.add_trace(go.Scatter(x=X_axis,y=X[2,0:len(X[2])],line_color='green'))
     plot.update_layout(title="Data: 1st sample of each waveform type")
-    plot.show()
+    if stream ==  True:
+        st.pyplot(plt)
+    else:
+        plt.show()
 
   x = X[:, :X.shape[1]-1]  # data
   y = X[:, -1] # label
@@ -4320,7 +4571,7 @@ def generate_regression_data(amplitude=None,frequency=None,noise=False,wave_numb
   return x, y
 
 # KALMAN FILTER
-def kalman_filter(x, x_last=0, p_last=0, Q=0.1, R=0.1):
+def kalman_filter(x, x_last=0, p_last=0, Q=0.1, R=0.1, show=False, stream=False):
     """
     Applies the Kalman filter to a sequence of measurements.
 
@@ -4364,6 +4615,12 @@ def kalman_filter(x, x_last=0, p_last=0, Q=0.1, R=0.1):
     for i in range(len(x)):
         pred, p_last, x_last = kalman(x[i], x_last, p_last, Q, R)
         y.append(pred)
+
+    if show:
+        if stream == True:
+            plot_filtered_signal(y, x, "Kalman Filter", stream=True)
+        else:
+            plot_filtered_signal(y, x, "Kalman Filter")
 
     return y
 

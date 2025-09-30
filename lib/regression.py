@@ -4,8 +4,11 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 from plotly.subplots import make_subplots
+import plotly.offline as py
+import plotly.tools as tls
 import chart_studio.plotly as py
 import plotly.graph_objects as go
+import streamlit as st
 
 import re
 import pytz
@@ -30,7 +33,10 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report, auc, roc_curve, roc_auc_score
 from sklearn.metrics import PredictionErrorDisplay 
 
-import lib.utils as utils
+import utils as utils
+from utils import get_timestamp_string, create_directory, save_model, create_model_yaml
+
+current_directory = Path.cwd()
 
 #import load_data as ld
 
@@ -123,7 +129,7 @@ def pipeBuild_Ridge(alpha=[1.0],fit_intercept=[True], copy_X=[True],max_iter=[No
 
 # RIDGE CV
 def pipeBuild_RidgeCV(alphas=[(0.1, 1.0, 10.0)],fit_intercept=[True], scoring=[None],cv=[None],
-  gcv_mode=['auto'],store_cv_values=[False],alpha_per_target=[False]):
+  gcv_mode=['auto'],alpha_per_target=[False]):
   regressor = RidgeCV()
   pipeline = Pipeline(steps=[('ridgecv', regressor)])
   params = [{
@@ -131,7 +137,7 @@ def pipeBuild_RidgeCV(alphas=[(0.1, 1.0, 10.0)],fit_intercept=[True], scoring=[N
         'ridgecv__fit_intercept': fit_intercept,
         'ridgecv__scoring': scoring,
         'ridgecv__gcv_mode': gcv_mode,
-        'ridgecv__store_cv_values': store_cv_values,
+        #'ridgecv__store_cv_values': store_cv_values,
         'ridgecv__alpha_per_target': alpha_per_target,
     }]
   return pipeline, params
@@ -668,7 +674,19 @@ def pipeBuild_OrthogonalMatchingPursuitCV(copy=[True], fit_intercept=[True],
   return pipeline, params
 
 # REGRESSOR GRID BUILDER
-def gridsearch_regressor(names,pipes,X_train,X_test,y_train,y_test,scoring='neg_mean_squared_error'):
+def gridsearch_regressor(names,pipes,X_train,X_test,y_train,y_test,scoring='neg_mean_squared_error',save_best=False,log=False,stream=False):
+    n_classes = int(np.amax(y_train)+1)
+    n_inputs = X_train.shape[1]
+
+    if save_best == True:
+      time_string = get_timestamp_string()
+      path_name = time_string + "_models"
+      directory_path = create_directory(path_name)
+
+    if log == True:
+       with open(path_name + '/output.txt', 'w') as f:
+          f.write("LOG FILE for run " + time_string + '\n' + '\n') 
+
     # iterate over regressors
     for j in range(len(names)):
 
@@ -677,16 +695,51 @@ def gridsearch_regressor(names,pipes,X_train,X_test,y_train,y_test,scoring='neg_
         score = grid_search.score(X_test, y_test)
         print("Best parameter (CV score=%0.3f):" % grid_search.best_score_)
         print(grid_search.best_params_)
+        if stream == True:
+          st.text("Best parameter (CV score=%0.3f):" % grid_search.best_score_)
+          st.text(grid_search.best_params_)
+        if log == True:
+          with open(path_name + '/output.txt', 'w') as f:
+              f.write("Best parameter (CV score=%0.3f):" % grid_search.best_score_ + '\n')
+              f.write(str(grid_search.best_params_) + '\n') 
         y_pred = grid_search.predict(X_test)
+
+        best_model = grid_search.best_estimator_
+        model_name = names[j]
+
+        if save_best == True:
+          #best_model = grid_search.best_estimator_
+          #model_name = names[j]
+          model_name = model_name.replace(' ','-')
+          best_name = './' + str(directory_path) + '/Best_' + model_name + '.pkl'
+          yaml_name = 'Best_' + model_name + '.yaml'
+          save_model(model=best_model,filename=best_name)
+          create_model_yaml(yaml_name=yaml_name,
+                            model_name='Best_' + model_name + '.pkl',
+                            model_path=str(current_directory / directory_path),
+                            model_type='regression',
+                            n_inputs=n_inputs,
+                            n_outputs=n_classes)
         
-        plt = utils.plot_2vectors(label=y_test, pred=y_pred, name=names[j], size=10)
+        fig = utils.plot_2vectors(label=y_test, pred=y_pred, name=names[j], size=10)
         #PredictionErrorDisplay.from_estimator(grid_search, X_test, y_test)
         best_title = 'Best Model: ' + names[j]
-        plt.title(best_title)
-
-        plt.show()
+        #plt.title(best_title)
+        fig.update_layout(title_text=best_title)
+        if stream == True:
+           st.plotly_chart(fig)
+        else:
+           fig.show()
+    
+    print("Regression gridsearch completed")
+    if stream == True:
+      st.text("Regression gridsearch completed")
+    if log == True:
+        with open(path_name + '/output.txt', 'a') as f:
+            f.write("Regression gridsearch completed")
     return
 
+"""
 if __name__ == '__main__':
   p = Path('.')
   datapath = p / "test_data/"
@@ -890,3 +943,4 @@ if __name__ == '__main__':
       
   plt.tight_layout()
   plt.show()
+  #"""

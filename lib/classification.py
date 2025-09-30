@@ -6,10 +6,12 @@ from pathlib import Path
 from plotly.subplots import make_subplots
 import chart_studio.plotly as py
 import plotly.graph_objects as go
+import streamlit as st
 
 import re
 import pytz
 from datetime import datetime
+from contextlib import redirect_stdout
 
 import enum
 from matplotlib.colors import ListedColormap
@@ -37,7 +39,13 @@ from tslearn.svm import TimeSeriesSVC
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import ConfusionMatrixDisplay, classification_report, RocCurveDisplay, auc, roc_curve, roc_auc_score
-from lib.utils import plot_confusion_matrix
+#from lib.utils import plot_confusion_matrix, get_timestamp_string, create_directory, save_model, create_model_yaml
+from utils import plot_confusion_matrix, get_timestamp_string, create_directory, save_model, create_model_yaml
+
+import warnings
+warnings.filterwarnings("ignore", category=Warning, module="", lineno=0, append=False)
+
+current_directory = Path.cwd()
 
 #import load_data as ld
 
@@ -3661,7 +3669,20 @@ def pipeBuild_TimeSeriesSVC(C=[1.0],kernel=['gak'],degree=[3],gamma=['auto'],coe
   return pipeline, params
 
 # CLASSIFICATON GRID BUILDER
-def gridsearch_classifier(names,pipes,X_train,X_test,y_train,y_test,scoring='neg_mean_squared_error',plot_number=10):
+def gridsearch_classifier(names,pipes,X_train,X_test,y_train,y_test,scoring='neg_mean_squared_error',plot_number=10,save_best=False,log=False,stream=False):
+    
+    n_classes = int(np.amax(y_train)+1)
+    n_inputs = X_train.shape[1]
+
+    if save_best == True:
+      time_string = get_timestamp_string()
+      path_name = time_string + "_models"
+      directory_path = create_directory(path_name)
+    
+    if log == True:
+       with open(path_name + '/output.txt', 'w') as f:
+          f.write("LOG FILE for run " + time_string + '\n' + '\n')          
+      
     # iterate over classifiers
     classes=np.unique(y_train)
     for j in range(len(names)):
@@ -3670,16 +3691,53 @@ def gridsearch_classifier(names,pipes,X_train,X_test,y_train,y_test,scoring='neg
         grid_search.fit(X_train, y_train)
         score = grid_search.score(X_test, y_test)
         print("Best parameter (CV score=%0.3f):" % grid_search.best_score_)
-        print(grid_search.best_params_)        
+        print(grid_search.best_params_)
+        if stream == True:
+           st.text("Best parameter (CV score=%0.3f):" % grid_search.best_score_)
+           st.text(grid_search.best_params_)
+        if log == True:            
+            with open(path_name + '/output.txt', 'a') as f:
+                f.write("Best parameter (CV score=%0.3f):" % grid_search.best_score_ + '\n')  
+                f.write(str(grid_search.best_params_) + '\n')      
         y_pred = grid_search.predict(X_test)
         #Check for -1 in predictions and change -1 to new value
         noise = np.isin(y_pred, -1) # changes anomaly scores 1 -> 0 and -1 -> 1
         if np.any(noise)==True:
             y_pred = np.where(y_pred == 1, 0, y_pred)
             y_pred = np.where(y_pred == -1, 1, y_pred)
-        print(classification_report(y_test, y_pred))
-        #ConfusionMatrixDisplay.from_estimator(grid_search, X_test, y_test, xticks_rotation="vertical")
-        plot_confusion_matrix(y_test,y_pred,classes,f"{names[j]} Confusion Matrix")
+        print(classification_report(y_test, y_pred, digits=6))         
+        if log == True:
+            with open(path_name + '/output.txt', 'a') as f:
+                f.write(classification_report(y_test, y_pred, digits=6) + '\n')
+        if stream == True:
+           st.text(classification_report(y_test, y_pred, digits=6))
+           plot_confusion_matrix(y_test,y_pred,classes,f"{names[j]} Confusion Matrix", stream=True)
+        else:
+            plot_confusion_matrix(y_test,y_pred,classes,f"{names[j]} Confusion Matrix")
+
+        best_model = grid_search.best_estimator_
+        model_name = names[j]
+
+        if save_best == True:
+          model_name = model_name.replace(' ','-')
+          best_name = './' + str(directory_path) + '/Best_' + model_name + '.pkl'
+          print("Best Name: ",best_name)
+          yaml_name = 'Best_' + model_name + '.yaml'
+          print("Yaml Name: ",yaml_name)
+          if stream == True:
+             st.text("Model File Name: " + str(best_name))
+             st.text("Yaml File Name: " + str(yaml_name))
+          if log == True:
+            with open(path_name + '/output.txt', 'a') as f:
+                f.write("Best Name: " + best_name + ' \n')
+                f.write("Yaml Name " + yaml_name + ' \n')
+          save_model(model=best_model,filename=best_name)
+          create_model_yaml(yaml_name=yaml_name,
+                            model_name='Best_' + model_name + '.pkl',
+                            model_path=str(current_directory / directory_path),
+                            model_type='classification',
+                            n_inputs=n_inputs,
+                            n_outputs=n_classes)
                   
         n_classes = int(np.amax(y_test)+1) 
         x_axis = np.arange(len(X_test[0]))
@@ -3722,10 +3780,27 @@ def gridsearch_classifier(names,pipes,X_train,X_test,y_train,y_test,scoring='neg
                 count = 0
         else:
             print("Incorrect plot number value entered")
+            if stream == True:
+               st.text("Incorrect plot number value entered")
+            if log == True:
+                with open(path_name + '/output.txt', 'a') as f:
+                    f.write("Incorrect plot number value entered" + '\n')
+        fig.update_layout(title_text= model_name + ' Classes')
         fig.update_layout(showlegend=False)
-        fig.show()
+        if stream == True:
+           st.plotly_chart(fig)
+        else:
+           fig.show() 
+        
+    print("Classifier gridsearch completed")
+    if stream == True:
+       st.text("Classifier gridsearch completed")
+    if log == True:
+        with open(path_name + '/output.txt', 'a') as f:
+            f.write("Classifier gridsearch completed")
     return
 
+"""
 # MAIN
 if __name__ == '__main__':
   p = Path('.')
@@ -3910,3 +3985,5 @@ if __name__ == '__main__':
       fig.show()
   plt.tight_layout()
   plt.show()
+
+#"""

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
+import streamlit as st
 
 import re
 import pytz
@@ -24,6 +25,12 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import ConfusionMatrixDisplay, classification_report, RocCurveDisplay, auc, roc_curve, roc_auc_score
 
 from tslearn.clustering import KernelKMeans, KShape, TimeSeriesKMeans
+from utils import plot_confusion_matrix, get_timestamp_string, create_directory, save_model, create_model_yaml
+
+import warnings
+warnings.filterwarnings("ignore", category=Warning, module="", lineno=0, append=False)
+
+current_directory = Path.cwd()
 
 #import load_data as ld
 
@@ -1675,7 +1682,20 @@ def pipeBuild_HDBSCAN(min_cluster_size=[5], min_samples=[None], cluster_selectio
 #"""
 
 # CLUSTERING GIRD BUILDER
-def gridsearch_clustering(names,pipes,X,y,scoring='rand_score',plot_number='all'):
+def gridsearch_clustering(names,pipes,X,y,scoring='rand_score',plot_number='all',save_best=False,log=False,stream=False):
+
+    n_classes = int(np.amax(y+1))
+    n_inputs = X.shape[1]
+
+    if save_best == True:
+      time_string = get_timestamp_string()
+      path_name = time_string + "_models"
+      directory_path = create_directory(path_name)
+    
+    if log == True:
+       with open(path_name + '/output.txt', 'w') as f:
+          f.write("LOG FILE for run " + time_string + '\n' + '\n')
+
     # iterate over cluterers
     for j in range(len(names)):
 
@@ -1684,19 +1704,52 @@ def gridsearch_clustering(names,pipes,X,y,scoring='rand_score',plot_number='all'
         #score = grid_search.score(X, y)
         print("Best parameter (CV score=%0.3f):" % grid_search.best_score_)
         print(grid_search.best_params_)
-        print("Best "+scoring+"score: ",grid_search.best_score_)
+        print("Best " + scoring + "score: ",grid_search.best_score_)
+        if stream == True:
+           st.text("Best parameter (CV score=%0.3f):" % grid_search.best_score_)
+           st.text(grid_search.best_params_)
+           st.text("Best " + scoring + "score: " + str(grid_search.best_score_))
+        if log == True:
+            with open(path_name + '/output.txt', 'a') as f:
+                f.write("Best parameter (CV score=%0.3f):" % grid_search.best_score_ + '\n')
+                f.write(str(grid_search.best_params_) + '\n')
+                f.write("Best " + str(scoring) +"score: "+ str(grid_search.best_score_) + '\n')
         labels = grid_search.best_estimator_.steps[0][1].labels_
         #print("Best Model Labels: ",labels)
         noise = np.isin(labels, -1)
         if np.any(noise)==True:
             new_noise_label = int(np.amax(labels)+1) # find the max label value
             labels = np.where(labels == -1, new_noise_label, labels)
+
+        best_model = grid_search.best_estimator_
+        model_name = names[j]
+
+        if save_best == True:
+          #best_model = grid_search.best_estimator_
+          #model_name = names[j]
+          model_name = model_name.replace(' ','-')
+          best_name = './' + str(directory_path) + '/Best_' + model_name + '.pkl'
+          yaml_name = 'Best_' + model_name + '.yaml'
+          save_model(model=best_model,filename=best_name)
+          create_model_yaml(yaml_name=yaml_name,
+                            model_name='Best_' + model_name + '.pkl',
+                            model_path=str(current_directory / directory_path),
+                            model_type='clustering',
+                            n_inputs=n_inputs,
+                            n_outputs=n_classes)
             
 
         x_classes = int(np.amax(labels)+1)
         y_classes = int(np.amax(y)+1)
         print("# of X's clusters is: ",x_classes)
         print("# of y's clusters is: ",y_classes)
+        if stream == True:
+           st.text("# of X's clusters is: " + str(x_classes))
+           st.text("# of y's clusters is: " + str(y_classes))
+        if log == True:
+            with open(path_name + '/output.txt', 'a') as f:
+                f.write("# of X's clusters is: " + str(x_classes) + '\n')
+                f.write("# of y's clusters is: " + str(y_classes) + '\n')
         if x_classes > y_classes:
             n_classes = x_classes
         else:
@@ -1713,27 +1766,6 @@ def gridsearch_clustering(names,pipes,X,y,scoring='rand_score',plot_number='all'
             rows=plot_number, cols=n_classes,
             subplot_titles=titles)
 
-        """
-        count = 0
-        current_label = 0
-        plot_num = 0
-        if isinstance(plot_number,int) and plot_number > 0 and plot_number <= 10:
-            while current_label < n_classes:
-                while count < len(y):
-                    if labels[count] == current_label and plot_num < plot_number:
-                        fig.add_trace(
-                            go.Scatter(x=x_axis,y=X[count]),
-                            row=plot_num+1, col=current_label+1
-                        )
-                        plot_num = plot_num +1
-                    count = count + 1
-                current_label = current_label +1
-                plot_num = 0
-                count = 0
-        else:
-            print("Incorrect plot number value entered")
-        fig.show()
-        #"""
         count = 0
         current_label = 0
         plot_num = 0
@@ -1763,11 +1795,27 @@ def gridsearch_clustering(names,pipes,X,y,scoring='rand_score',plot_number='all'
                 count = 0
         else:
             print("Incorrect plot number value entered")
+            if stream == True:
+               st.text("Incorrect plot number value entered")
+            if log == True:
+                with open(path_name + '/output.txt', 'a') as f:
+                    f.write("Incorrect plot number value entered" + '\n')
+        fig.update_layout(title_text= model_name + ' Clusters')
         fig.update_layout(showlegend=False)
-        fig.show()
+        if stream == True:
+           st.plotly_chart(fig)
+        else:
+           fig.show()
+
+    print("Clustering gridsearch completed")
+    if stream == True:
+       st.text("Clustering gridsearch completed")
+    if log == True:
+        with open(path_name + '/output.txt', 'a') as f:
+            f.write("Clustering gridsearch completed")
     return
 
-
+"""
 if __name__ == '__main__':
   p = Path('.')
   datapath = p / "test_data/"
@@ -1883,3 +1931,4 @@ if __name__ == '__main__':
           fig.update_xaxes(title_text="Class "+str(f), row=f+1, col=2)
           f = f + 1
       fig.show()
+#"""
