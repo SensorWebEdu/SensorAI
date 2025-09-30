@@ -11,3 +11,7 @@ sk_grid_builder.py
 test.py
 pytorch_weight_norm.py
 lib/deeplearning.py
+0_example_models/influxdb_windowed.yaml
+0_example_models/influxdb_default.yaml
+0_example_models/smartplug_default.yaml
+0_example_models/smartplug_windowed.yaml

@@ -1,0 +1,17 @@
+LOG FILE for run 20250930181940
+
+Best parameter (CV score=-0.018):
+{'extra__criterion': 'gini', 'extra__max_depth': None, 'extra__max_features': 'sqrt', 'extra__min_samples_leaf': 1, 'extra__min_samples_split': 2, 'extra__n_estimators': 100}
+              precision    recall  f1-score   support
+
+         0.0   1.000000  1.000000  1.000000        36
+         1.0   1.000000  1.000000  1.000000        40
+         2.0   1.000000  1.000000  1.000000        19
+
+    accuracy                       1.000000        95
+   macro avg   1.000000  1.000000  1.000000        95
+weighted avg   1.000000  1.000000  1.000000        95
+
+Best Name: ./20250930181940_models/Best_Extra-Trees.pkl 
+Yaml Name Best_Extra-Trees.yaml 
+Classifier gridsearch completed
