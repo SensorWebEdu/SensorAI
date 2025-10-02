@@ -13,6 +13,7 @@ scipy
 #--no-binary scipy
 seaborn
 #statsmodels==0.13.5
+statsmodels
 tslearn==0.6.1
 vmdpy==0.2
 tftb
@@ -29,3 +30,4 @@ paho-mqtt
 streamlit
 streamlit-option_menu
 streamlit-pdf-viewer
+tkinter
