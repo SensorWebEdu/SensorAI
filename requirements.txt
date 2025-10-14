@@ -1,25 +1,25 @@
 numpy==1.26.4
-EMD_signal
-ewtpy
-matplotlib
+EMD_signal==1.6.4
+ewtpy==0.2
+matplotlib==3.10.6
 padasip==1.2.2
 pandas
 pytz
-PyWavelets
-scikit-learn
+PyWavelets==1.8.0
+scikit-learn==1.7.2
 #--no-binary scikit-learn
 sktime
 scipy==1.14.1
 #--no-binary scipy
 seaborn
 #statsmodels==0.13.5
-statsmodels
+statsmodels==0.13.5
 tslearn==0.6.1
 vmdpy==0.2
 tftb
 tqdm
 ssqueezepy
-numba
+numba==0.62.0
 jupyter
 h5py
 chart_studio
@@ -32,4 +32,5 @@ streamlit-option_menu
 streamlit-pdf-viewer
 
 tkinter
+
 
