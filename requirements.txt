@@ -9,7 +9,7 @@ PyWavelets
 scikit-learn
 #--no-binary scikit-learn
 sktime
-scipy
+scipy==1.14.1
 #--no-binary scipy
 seaborn
 #statsmodels==0.13.5
@@ -30,4 +30,5 @@ paho-mqtt
 streamlit
 streamlit-option_menu
 streamlit-pdf-viewer
+
 tkinter
