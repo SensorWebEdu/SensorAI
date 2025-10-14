@@ -1,4 +1,4 @@
-numpy
+numpy==1.26.4
 EMD_signal
 ewtpy
 matplotlib
@@ -32,3 +32,4 @@ streamlit-option_menu
 streamlit-pdf-viewer
 
 tkinter
+
