@@ -27,9 +27,9 @@ plotly
 influxdb-client
 paho-mqtt
 #customtkinter
-streamlit
-streamlit-option_menu
-streamlit-pdf-viewer
+#streamlit
+#streamlit-option_menu
+#streamlit-pdf-viewer
 
 
 
