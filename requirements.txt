@@ -31,6 +31,5 @@ streamlit
 streamlit-option_menu
 streamlit-pdf-viewer
 
-tkinter
 
 
