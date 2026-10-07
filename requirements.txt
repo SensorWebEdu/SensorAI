@@ -13,7 +13,7 @@ scipy==1.14.1
 #--no-binary scipy
 seaborn
 #statsmodels==0.13.5
-statsmodels==0.13.5
+statsmodels==0.14.1
 tslearn==0.6.1
 vmdpy==0.2
 tftb
