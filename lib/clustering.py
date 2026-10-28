@@ -25,7 +25,10 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import ConfusionMatrixDisplay, classification_report, RocCurveDisplay, auc, roc_curve, roc_auc_score
 
 from tslearn.clustering import KernelKMeans, KShape, TimeSeriesKMeans
-from utils import plot_confusion_matrix, get_timestamp_string, create_directory, save_model, create_model_yaml
+if __package__:
+    from .utils import plot_confusion_matrix, get_timestamp_string, create_directory, save_model, create_model_yaml
+else:  # Streamlit pages also import this module directly from lib/.
+    from utils import plot_confusion_matrix, get_timestamp_string, create_directory, save_model, create_model_yaml
 
 import warnings
 warnings.filterwarnings("ignore", category=Warning, module="", lineno=0, append=False)

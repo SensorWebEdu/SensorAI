@@ -28,7 +28,10 @@ from sklearn.metrics import confusion_matrix, classification_report
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import plotly.express as px
-from utils import plot_confusion_matrix, get_timestamp_string, create_directory, save_model, create_model_yaml
+if __package__:
+    from .utils import plot_confusion_matrix, get_timestamp_string, create_directory, save_model, create_model_yaml
+else:  # Streamlit pages also import this module directly from lib/.
+    from utils import plot_confusion_matrix, get_timestamp_string, create_directory, save_model, create_model_yaml
 
 import warnings
 warnings.filterwarnings("ignore", category=Warning, module="", lineno=0, append=False)

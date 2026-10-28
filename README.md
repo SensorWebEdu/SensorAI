@@ -26,9 +26,26 @@ Song, WenZhan, Stephen Coshatt, Yida Zhang, and Jiayu Chen. "Sensor Data Science
 5. Deep Learning: https://github.com/timeseriesAI/tsai or https://github.com/thuml/Time-Series-Library
 
 ## Package Installation
-Run install.sh to install the necessary packages.
+Create and activate a Python 3.11 environment, then install the dependencies:
 
-        ./install.sh
+```bash
+conda create -n sensorai python=3.11 pip -y
+conda activate sensorai
+bash install.sh
+python -m notebook
+```
+
+If `sensorai` already exists, skip the environment creation command. Select that
+environment as the notebook kernel and restart the kernel after updating packages.
+The tutorials use the current kernel's packages; do not add another virtual
+environment's `site-packages` directory to `sys.path`.
+
+`pandas` is pinned for compatibility with `statsmodels==0.14.1`, and `pyarrow` is
+pinned for compatibility with NumPy 1.26. `streamlit` is required by the shared
+helper modules, and `pyts` is used in the unsupervised tutorial.
+The installer adds `fastsst` separately with `--no-deps` because its
+upstream dependency list uses the deprecated `sklearn` package name; the actual
+`scikit-learn` package is already included in `requirements.txt`.
 
 ## General Workflow of Sensor AI
 

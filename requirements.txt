@@ -3,7 +3,7 @@ EMD_signal==1.6.4
 ewtpy==0.2
 matplotlib==3.10.6
 padasip==1.2.2
-pandas
+pandas==2.2.3
 pytz
 PyWavelets==1.8.0
 scikit-learn==1.7.2
@@ -27,9 +27,9 @@ plotly
 influxdb-client
 paho-mqtt
 #customtkinter
-#streamlit
+streamlit
+# Keep Streamlit's Arrow dependency compatible with NumPy 1.26.
+pyarrow==19.0.1
+pyts==0.13.0
 #streamlit-option_menu
 #streamlit-pdf-viewer
-
-
-
